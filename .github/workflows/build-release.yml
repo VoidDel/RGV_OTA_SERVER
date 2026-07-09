@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag，例如 v1.0.0；留空则使用 manual-${{ github.run_number }}"
+        description: "Release tag，例如 v1.0.0；留空则使用 manual-运行编号"
         required: false
         type: string
 
