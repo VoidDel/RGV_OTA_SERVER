@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}总览 - RGV OTA{% endblock %}
+{% block heading %}OTA 推送总览{% endblock %}
+{% block subheading %}固件与推送总览{% endblock %}
+{% block content %}
+<section class="grid stats">
+  <div class="card stat-card">
+    <div class="stat-content">
+      <span>MQTT 状态</span>
+      <strong id="stat-mqtt">--</strong>
+      <small id="stat-broker">--</small>
+    </div>
+    <div class="stat-icon">
+      <i class="bi bi-wifi"></i>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-content">
+      <span>固件版本</span>
+      <strong id="stat-fw">0</strong>
+    </div>
+    <div class="stat-icon">
+      <i class="bi bi-archive-fill"></i>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-content">
+      <span>已知设备</span>
+      <strong id="stat-dev">0</strong>
+    </div>
+    <div class="stat-icon">
+      <i class="bi bi-cpu-fill"></i>
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-content">
+      <span>推送次数</span>
+      <strong id="stat-deploy">0</strong>
+    </div>
+    <div class="stat-icon">
+      <i class="bi bi-rocket-takeoff-fill"></i>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="card panel-card">
+    <h2>
+      <i class="bi bi-lightning-charge-fill panel-header-icon"></i>
+      <span>快捷 OTA 推送</span>
+    </h2>
+    <div class="form-group">
+      <label>固件版本</label>
+      <div class="select-wrapper">
+        <select id="quick-firmware"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>RGV 设备</label>
+      <div class="select-wrapper">
+        <select id="quick-device"></select>
+      </div>
+    </div>
+    <div class="checks">
+      <label class="checkbox-container">
+        <input type="checkbox" id="quick-force">
+        <span class="checkbox-checkmark"></span>
+        <span>强制升级</span>
+      </label>
+      <label class="checkbox-container">
+        <input type="checkbox" id="quick-reboot" checked>
+        <span class="checkbox-checkmark"></span>
+        <span>成功后重启</span>
+      </label>
+    </div>
+    <button class="primary btn-glow" id="quick-deploy">发布推送</button>
+  </div>
+  <div class="card panel-card">
+    <h2>
+      <i class="bi bi-activity panel-header-icon"></i>
+      <span>最近运行事件</span>
+    </h2>
+    <div id="events" class="event-list scrollable"></div>
+  </div>
+</section>
+
+<section class="card panel-card">
+  <h2>
+    <i class="bi bi-clock-history panel-header-icon"></i>
+    <span>最近部署历史</span>
+  </h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 80px;">部署 ID</th>
+          <th>目标设备</th>
+          <th>目标版本</th>
+          <th style="width: 140px;">当前状态</th>
+          <th style="width: 220px;">OTA 进度</th>
+          <th>提示消息</th>
+        </tr>
+      </thead>
+      <tbody id="deployments-table"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/dashboard.js"></script>{% endblock %}

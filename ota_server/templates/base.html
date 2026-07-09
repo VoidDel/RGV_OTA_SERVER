@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}RGV OTA Server{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script>
+    (function() {
+      const stored = localStorage.getItem('ota-theme') || 'system';
+      let theme = stored;
+      if (stored === 'system') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-theme-preference', stored);
+    })();
+  </script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <i class="bi bi-car-front-fill" style="font-size: 16px;"></i>
+      </div>
+      <div class="brand-text">
+        <strong>RGV OTA PRO</strong>
+        <span>UPDATE CONSOLE</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a class="nav-item {% if page == 'dashboard' %}active{% endif %}" href="/">
+        <i class="bi bi-grid-fill nav-icon"></i>
+        <span>总览</span>
+      </a>
+      <a class="nav-item {% if page == 'firmware' %}active{% endif %}" href="/firmware">
+        <i class="bi bi-file-earmark-binary-fill nav-icon"></i>
+        <span>固件版本</span>
+      </a>
+      <a class="nav-item {% if page == 'devices' %}active{% endif %}" href="/devices">
+        <i class="bi bi-truck nav-icon"></i>
+        <span>RGV设备</span>
+      </a>
+      <a class="nav-item {% if page == 'deployments' %}active{% endif %}" href="/deployments">
+        <i class="bi bi-clock-history nav-icon"></i>
+        <span>推送历史</span>
+      </a>
+      <a class="nav-item {% if page == 'settings' %}active{% endif %}" href="/settings">
+        <i class="bi bi-gear-fill nav-icon"></i>
+        <span>服务器设置</span>
+      </a>
+    </nav>
+    <div class="theme-switcher">
+      <button class="theme-btn" data-theme-val="system" title="跟随系统">
+        <i class="bi bi-laptop"></i>
+      </button>
+      <button class="theme-btn" data-theme-val="light" title="亮色主题">
+        <i class="bi bi-sun-fill"></i>
+      </button>
+      <button class="theme-btn" data-theme-val="dark" title="暗色主题">
+        <i class="bi bi-moon-stars-fill"></i>
+      </button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1>{% block heading %}RGV OTA Server{% endblock %}</h1>
+        <p>{% block subheading %}固件版本管理与远程OTA推送{% endblock %}</p>
+      </div>
+      <div id="mqtt-pill" class="pill muted">
+        <span class="status-dot animate-pulse"></span>
+        <span class="status-text">MQTT 检查中</span>
+      </div>
+    </header>
+    <div class="content-wrapper">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+  <div class="toast hidden" id="toast"></div>
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+  <div class="ambient-glow-3"></div>
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

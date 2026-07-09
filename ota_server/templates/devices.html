@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}RGV设备 - RGV OTA{% endblock %}
+{% block heading %}RGV 设备管理{% endblock %}
+{% block subheading %}设备管理与推送{% endblock %}
+{% block content %}
+<section class="grid">
+  <form id="device-form" class="card panel-card">
+    <h2>
+      <i class="bi bi-plus-circle-fill panel-header-icon"></i>
+      <span>手动添加设备</span>
+    </h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>设备 RGV ID</label>
+        <input name="rgv_id" placeholder="例如：RGV-01" required>
+      </div>
+      <div class="form-group">
+        <label>设备名称</label>
+        <input name="name" placeholder="例如：1号穿梭车">
+      </div>
+    </div>
+    <button class="primary btn-glow" type="submit" style="margin-top: 12px;">保存设备</button>
+  </form>
+</section>
+
+<section class="card panel-card">
+  <h2>
+    <i class="bi bi-send-fill panel-header-icon"></i>
+    <span>批量下发 OTA 任务</span>
+  </h2>
+  <div class="bulk-deploy-box">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>目标固件版本</label>
+        <div class="select-wrapper">
+          <select id="bulk-firmware"></select>
+        </div>
+      </div>
+      <div class="form-group checks-group">
+        <label>升级选项</label>
+        <div class="checks">
+          <label class="checkbox-container">
+            <input type="checkbox" id="bulk-force">
+            <span class="checkbox-checkmark"></span>
+            <span>强制升级</span>
+          </label>
+          <label class="checkbox-container">
+            <input type="checkbox" id="bulk-reboot" checked>
+            <span class="checkbox-checkmark"></span>
+            <span>成功后重启</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary btn-glow" id="deploy-selected" type="button">
+        <i class="bi bi-check-circle-fill" style="font-size: 14px;"></i>
+        <span>推送选中设备</span>
+      </button>
+      <button class="btn-secondary" id="deploy-all" type="button">
+        <i class="bi bi-cloud-arrow-up-fill" style="font-size: 14px;"></i>
+        <span>推送全部设备</span>
+      </button>
+    </div>
+    <div id="bulk-result" class="bulk-result-container"></div>
+  </div>
+</section>
+
+<section class="card panel-card">
+  <div class="panel-header-between">
+    <h2>
+      <i class="bi bi-cpu panel-header-icon"></i>
+      <span>设备列表</span>
+    </h2>
+    <div class="actions font-actions">
+      <button id="select-all-devices" class="btn-small" type="button">全选</button>
+      <button id="clear-device-selection" class="btn-small btn-secondary" type="button">清空选择</button>
+    </div>
+  </div>
+  <div id="device-grid" class="device-grid"></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/devices.js"></script>{% endblock %}

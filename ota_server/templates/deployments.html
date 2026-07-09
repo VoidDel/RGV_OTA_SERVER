@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}推送历史 - RGV OTA{% endblock %}
+{% block heading %}OTA 推送历史{% endblock %}
+{% block subheading %}推送历史记录{% endblock %}
+{% block content %}
+<section class="card panel-card">
+  <h2>
+    <i class="bi bi-clock-history panel-header-icon"></i>
+    <span>OTA 部署历史记录</span>
+  </h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 80px;">部署 ID</th>
+          <th>目标设备</th>
+          <th>推送固件</th>
+          <th style="width: 140px;">当前状态</th>
+          <th style="width: 220px;">升级进度</th>
+          <th>MQTT 触发主题 (Topic)</th>
+          <th>状态提示消息</th>
+          <th style="width: 100px; text-align: center;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="deployments-table"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/deployments.js"></script>{% endblock %}

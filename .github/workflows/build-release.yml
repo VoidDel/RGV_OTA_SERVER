@@ -1,0 +1,86 @@
+name: Build Windows Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag，例如 v1.0.0；留空则使用 manual-${{ github.run_number }}"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows exe
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
+
+      - name: Build exe
+        env:
+          CI: "1"
+        run: pyinstaller --clean --noconfirm ota_server.spec
+
+      - name: Package release zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release\RGV_OTA_Server\data | Out-Null
+          New-Item -ItemType Directory -Force release\RGV_OTA_Server\firmware | Out-Null
+          Copy-Item dist\RGV_OTA_Server.exe release\RGV_OTA_Server\
+          Copy-Item README.md release\RGV_OTA_Server\
+          Compress-Archive -Path release\RGV_OTA_Server -DestinationPath RGV_OTA_Server_windows.zip -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RGV_OTA_Server_windows
+          path: |
+            dist/RGV_OTA_Server.exe
+            RGV_OTA_Server_windows.zip
+
+      - name: Prepare release metadata
+        id: release_meta
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $tag = '${{ inputs.version }}'
+            if ([string]::IsNullOrWhiteSpace($tag)) {
+              $tag = 'manual-${{ github.run_number }}'
+            }
+          } else {
+            $tag = '${{ github.ref_name }}'
+          }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "name=RGV OTA Server $tag" >> $env:GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.release_meta.outputs.name }}
+          files: |
+            dist/RGV_OTA_Server.exe
+            RGV_OTA_Server_windows.zip

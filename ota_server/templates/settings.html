@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}设置 - RGV OTA{% endblock %}
+{% block heading %}服务器设置{% endblock %}
+{% block subheading %}配置 MQTT 与固件下载地址{% endblock %}
+{% block content %}
+<form id="settings-form" class="card panel-card settings-card">
+  <h2>
+    <i class="bi bi-sliders panel-header-icon"></i>
+    <span>连接与通信参数设置</span>
+  </h2>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>MQTT Host</label>
+      <input name="mqtt_host" placeholder="例如：192.168.1.125" required>
+    </div>
+    <div class="form-group">
+      <label>MQTT Port</label>
+      <input name="mqtt_port" type="number" placeholder="例如：1883" required>
+    </div>
+    <div class="form-group">
+      <label>MQTT 用户名 (选填)</label>
+      <input name="mqtt_username" placeholder="可选">
+    </div>
+    <div class="form-group">
+      <label>MQTT 密码 (选填)</label>
+      <input name="mqtt_password" type="password" placeholder="可选">
+    </div>
+    <div class="form-group wide">
+      <label>Public Base URL</label>
+      <input name="public_base_url" placeholder="例如：http://192.168.1.125:8080" required>
+    </div>
+  </div>
+  
+  <div id="url-warning" class="warning-alert hidden">
+    <i class="bi bi-exclamation-triangle-fill warning-icon"></i>
+    <div class="warning-text">
+      <strong>配置警告</strong><br>
+      检测到本地环回地址 (127.0.0.1/localhost)。车载 RGV 无法通过此地址下载固件，请更改为局域网 IP (如 192.168.x.x)。
+    </div>
+  </div>
+  
+  <button class="primary btn-glow" type="submit">保存设置</button>
+</form>
+{% endblock %}
+{% block scripts %}<script src="/static/js/settings.js"></script>{% endblock %}
