@@ -324,6 +324,50 @@ def check_ota(request: Request, rgv_id: str, version: str = "") -> dict[str, Any
             """,
             (rgv_id, version, now, now, now),
         )
+
+        # A boot-time check with the target version confirms the OTA reboot completed.
+        rebooted_deployment = conn.execute(
+            """
+            SELECT id FROM deployments
+            WHERE rgv_id=? AND lower(status)='rebooting' AND version=?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (rgv_id, version),
+        ).fetchone()
+        if rebooted_deployment is not None:
+            message = "已确认重启并运行目标版本"
+            conn.execute(
+                """
+                UPDATE devices
+                SET last_status='success', last_progress=100, last_code=0,
+                    last_message=?, last_seen_at=?, updated_at=?
+                WHERE rgv_id=?
+                """,
+                (message, now, now, rgv_id),
+            )
+            conn.execute(
+                """
+                UPDATE deployments
+                SET status='success', progress=100, code=0, message=?,
+                    completed_at=?, last_checked_at=?, updated_at=?
+                WHERE id=?
+                """,
+                (message, now, now, now, rebooted_deployment["id"]),
+            )
+            db.add_event(
+                conn,
+                {
+                    "type": "ota",
+                    "rgv_id": rgv_id,
+                    "status": "success",
+                    "progress": 100,
+                    "code": 0,
+                    "message": message,
+                    "topic": "/api/ota/check",
+                    "created_at": now,
+                },
+            )
+
         deployment = conn.execute(
             """
             SELECT d.*, f.stored_filename, f.is_active
