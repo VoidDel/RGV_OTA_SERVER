@@ -6,15 +6,15 @@ async function loadDeployments() {
   table.innerHTML = rows.map(d => `
     <tr>
       <td class="code-font">${d.id}</td>
-      <td><strong class="color-primary">${d.rgv_id}</strong></td>
+      <td><strong class="color-primary">${esc(d.rgv_id)}</strong></td>
       <td>
-        <span class="version-tag">${d.firmware_version}</span>
-        <div class="fw-filename-sub code-font">${d.firmware_filename}</div>
+        <span class="version-tag">${esc(d.firmware_version)}</span>
+        <div class="fw-filename-sub code-font">${esc(d.firmware_filename)}</div>
       </td>
       <td>${badge(d.status)}</td>
       <td>${progress(d.progress)}</td>
-      <td><span class="topic-tag code-font">${d.mqtt_topic || '--'}</span></td>
-      <td class="table-msg">${d.message || '--'}</td>
+      <td><span class="topic-tag code-font">${esc(d.mqtt_topic || '--')}</span></td>
+      <td class="table-msg">${esc(d.message || '--')}</td>
       <td class="action-cell">
         <button class="btn-small btn-secondary" onclick="retry(${d.id})">重试</button>
       </td>

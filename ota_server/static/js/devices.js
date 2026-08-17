@@ -5,7 +5,7 @@ async function loadFirmwareOptions() {
   const rows = await api('/api/firmware');
   const select = document.getElementById('bulk-firmware');
   if (select) {
-    select.innerHTML = rows.map(f => `<option value="${f.id}">${f.version} (${bytes(f.file_size)}) - ${f.description || f.filename}</option>`).join('') || '<option value="">暂无固件</option>';
+    select.innerHTML = rows.map(f => `<option value="${f.id}">${esc(f.version)} (${bytes(f.file_size)}) - ${esc(f.description || f.filename)}</option>`).join('') || '<option value="">暂无固件</option>';
   }
 }
 
@@ -18,34 +18,34 @@ async function loadDevices() {
     const isSelected = selectedDevices.has(d.rgv_id);
     const lastSeenStr = d.last_seen_at ? d.last_seen_at.replace('T', ' ').split('.')[0] : '--';
     return `
-      <div class="device-card ${isSelected ? 'selected' : ''}" onclick="toggleDeviceSelection(event, '${d.rgv_id}')">
+      <div class="device-card ${isSelected ? 'selected' : ''}" data-rgv="${esc(d.rgv_id)}" onclick="toggleDeviceSelection(event, this.dataset.rgv)">
         <div class="device-card-header">
           <label class="checkbox-container" onclick="event.stopPropagation()">
-            <input type="checkbox" class="device-check" value="${d.rgv_id}" ${isSelected ? 'checked' : ''} onchange="onDeviceCheckChange(this)">
+            <input type="checkbox" class="device-check" value="${esc(d.rgv_id)}" ${isSelected ? 'checked' : ''} onchange="onDeviceCheckChange(this)">
             <span class="checkbox-checkmark"></span>
-            <span class="device-id">${d.rgv_id}</span>
+            <span class="device-id">${esc(d.rgv_id)}</span>
           </label>
           <div class="device-status-badge">
             ${badge(d.last_status || 'unknown')}
           </div>
         </div>
         <div class="device-card-body">
-          <div class="device-name">${d.name || '未命名车 (已自动注册)'}</div>
+          <div class="device-name">${esc(d.name || '未命名车 (已自动注册)')}</div>
           <div class="device-meta-list">
             <div class="device-meta-item">
               <span class="label">当前运行版本:</span>
-              <span class="value code-font">${d.current_version || '--'}</span>
+              <span class="value code-font">${esc(d.current_version || '--')}</span>
             </div>
             <div class="device-meta-item progress-meta">
               <span class="label">OTA 进度:</span>
               <span class="value">${progress(d.last_progress || 0)}</span>
             </div>
-            ${d.last_message ? `<div class="device-error-msg">${d.last_message}</div>` : ''}
+            ${d.last_message ? `<div class="device-error-msg">${esc(d.last_message)}</div>` : ''}
           </div>
         </div>
         <div class="device-card-footer">
           <i class="bi bi-clock" style="font-size: 11px;"></i>
-          <span>最后在线: ${lastSeenStr}</span>
+          <span>最后在线: ${esc(lastSeenStr)}</span>
         </div>
       </div>
     `;
@@ -91,10 +91,10 @@ async function deploy(payload) {
     
     const resultHtml = result.deployments.map(d => `
       <div class="bulk-result-item">
-        <span class="rgv-id">${d.rgv_id}</span>
+        <span class="rgv-id">${esc(d.rgv_id)}</span>
         <span class="divider">:</span>
         ${badge(d.status)}
-        <span class="msg">${d.message || '指令发布成功'}</span>
+        <span class="msg">${esc(d.message || '指令发布成功')}</span>
       </div>
     `).join('');
     

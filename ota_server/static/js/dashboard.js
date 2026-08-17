@@ -29,12 +29,12 @@ async function loadDashboard() {
 
   const sf = document.getElementById('quick-firmware');
   if (sf) {
-    sf.innerHTML = fw.map(x => `<option value="${x.id}">${x.version} - ${x.description || x.filename}</option>`).join('') || '<option value="">无可用固件</option>';
+    sf.innerHTML = fw.map(x => `<option value="${x.id}">${esc(x.version)} - ${esc(x.description || x.filename)}</option>`).join('') || '<option value="">无可用固件</option>';
   }
-  
+
   const sd = document.getElementById('quick-device');
   if (sd) {
-    sd.innerHTML = dev.map(x => `<option value="${x.rgv_id}">${x.rgv_id} ${x.name ? '(' + x.name + ')' : ''}</option>`).join('') || '<option value="">无注册设备</option>';
+    sd.innerHTML = dev.map(x => `<option value="${esc(x.rgv_id)}">${esc(x.rgv_id)} ${x.name ? '(' + esc(x.name) + ')' : ''}</option>`).join('') || '<option value="">无注册设备</option>';
   }
 
   const eventsEl = document.getElementById('events');
@@ -44,11 +44,11 @@ async function loadDashboard() {
       return `
         <div class="event-item">
           <div class="event-header">
-            <span class="event-id code-font">${e.rgv_id || 'SYSTEM'}</span>
-            <span class="event-time">${timeStr}</span>
+            <span class="event-id code-font">${esc(e.rgv_id || 'SYSTEM')}</span>
+            <span class="event-time">${esc(timeStr)}</span>
           </div>
           <div class="event-body">
-            <span class="event-msg">${e.message || ''}</span>
+            <span class="event-msg">${esc(e.message || '')}</span>
             <div class="event-badge">${badge(e.status)}</div>
           </div>
         </div>
@@ -61,11 +61,11 @@ async function loadDashboard() {
     depTable.innerHTML = dep.map(d => `
       <tr>
         <td class="code-font">${d.id}</td>
-        <td><strong class="color-primary">${d.rgv_id}</strong></td>
-        <td><span class="version-tag">${d.firmware_version}</span></td>
+        <td><strong class="color-primary">${esc(d.rgv_id)}</strong></td>
+        <td><span class="version-tag">${esc(d.firmware_version)}</span></td>
         <td>${badge(d.status)}</td>
         <td>${progress(d.progress)}</td>
-        <td class="table-msg">${d.message || '--'}</td>
+        <td class="table-msg">${esc(d.message || '--')}</td>
       </tr>
     `).join('') || '<tr><td colspan="6" class="no-data-td">暂无部署记录</td></tr>';
   }

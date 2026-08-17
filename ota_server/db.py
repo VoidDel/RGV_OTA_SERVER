@@ -41,6 +41,7 @@ def init_db() -> None:
                 stored_filename TEXT NOT NULL UNIQUE,
                 file_size INTEGER NOT NULL,
                 sha256 TEXT NOT NULL,
+                image_digest TEXT DEFAULT '',
                 description TEXT DEFAULT '',
                 release_notes TEXT DEFAULT '',
                 is_active INTEGER DEFAULT 1,
@@ -129,6 +130,9 @@ def migrate_db(conn: sqlite3.Connection) -> None:
     for column, sql in migrations.items():
         if not column_exists(conn, "deployments", column):
             conn.execute(sql)
+    # 设备侧校验口径的镜像摘要（hash_appended 时为 file[:-32] 的哈希）
+    if not column_exists(conn, "firmware_versions", "image_digest"):
+        conn.execute("ALTER TABLE firmware_versions ADD COLUMN image_digest TEXT DEFAULT ''")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_deployments_queue ON deployments(rgv_id, status, id)")
 
 
