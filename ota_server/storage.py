@@ -63,6 +63,22 @@ async def save_upload_temp(upload: UploadFile) -> tuple[Path, int, str]:
     return temp_path, size, sha.hexdigest()
 
 
+def compute_image_digest(path: Path, file_sha256: str) -> str:
+    """计算设备侧可校验的镜像摘要。
+
+    ESP-IDF 构建的固件尾部附带"正文 SHA256"(hash_appended)，设备端
+    esp_partition_get_sha256() 返回的是该附加摘要（即 file[:-32] 的哈希），
+    而不是整文件哈希。两者口径必须一致，否则设备校验永远失败。
+    无附加摘要的镜像退化为整文件哈希（设备按 image_len 全量哈希）。
+    """
+    data = path.read_bytes()
+    if len(data) > 32:
+        body_digest = hashlib.sha256(data[:-32]).digest()
+        if data[-32:] == body_digest:
+            return body_digest.hex()
+    return file_sha256
+
+
 def finalize_firmware_file(temp_path: Path, firmware_id: int, version: str, sha256: str) -> str:
     stored_filename = f"fw_{firmware_id}_{safe_version(version)}_{sha256[:8]}.bin"
     target = FIRMWARE_DIR / stored_filename

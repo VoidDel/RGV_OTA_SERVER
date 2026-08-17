@@ -1,6 +1,7 @@
 import json
 import threading
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 import paho.mqtt.client as mqtt
@@ -147,8 +148,14 @@ class OtaMqttClient:
                 """,
                 (rgv_id, version, status, progress, code, message, now, now, now),
             )
+            # 只归因到"进行中"的 deployment：终态(success/failed/rebooting/skipped)
+            # 不被迟到/重复的 otaStatus 覆盖；无进行中记录时仅更新设备与事件。
             deployment = conn.execute(
-                "SELECT id FROM deployments WHERE rgv_id=? ORDER BY id DESC LIMIT 1",
+                """
+                SELECT id FROM deployments
+                WHERE rgv_id=? AND lower(status) NOT IN ('success','failed','rebooting','skipped')
+                ORDER BY id DESC LIMIT 1
+                """,
                 (rgv_id,),
             ).fetchone()
             if deployment:
@@ -176,9 +183,16 @@ class OtaMqttClient:
             )
         self._publish_queued_deployment(rgv_id)
 
+    # 设备重新上线判定阈值：超过该时长未见到状态上报才记录 online 事件，
+    # 避免 1Hz 心跳每秒写一行 events 导致数据库无界膨胀。
+    ONLINE_EVENT_GAP_SECONDS = 120
+
     def _record_device_seen(self, rgv_id: str, payload_text: str) -> None:
         now = db.utc_now()
         with db.connect() as conn:
+            existing = conn.execute(
+                "SELECT last_seen_at FROM devices WHERE rgv_id=?", (rgv_id,)
+            ).fetchone()
             conn.execute(
                 """
                 INSERT INTO devices(rgv_id, last_seen_at, created_at, updated_at)
@@ -187,18 +201,25 @@ class OtaMqttClient:
                 """,
                 (rgv_id, now, now, now),
             )
-            db.add_event(
-                conn,
-                {
-                    "type": "status",
-                    "rgv_id": rgv_id,
-                    "status": "online",
-                    "message": "设备状态上报",
-                    "topic": f"rgv/rcs/{rgv_id}/report/status",
-                    "payload": payload_text,
-                    "created_at": now,
-                },
+            # ISO8601 UTC 字符串可直接按字典序比较
+            came_online = (
+                existing is None
+                or existing["last_seen_at"] is None
+                or (datetime.now(timezone.utc) - datetime.fromisoformat(existing["last_seen_at"])).total_seconds()
+                    > self.ONLINE_EVENT_GAP_SECONDS
             )
+            if came_online:
+                db.add_event(
+                    conn,
+                    {
+                        "type": "status",
+                        "rgv_id": rgv_id,
+                        "status": "online",
+                        "message": "设备上线",
+                        "topic": f"rgv/rcs/{rgv_id}/report/status",
+                        "created_at": now,
+                    },
+                )
 
     def _publish_queued_deployment(self, rgv_id: str) -> None:
         if not rgv_id or not self._client or not self._connected:
@@ -214,7 +235,14 @@ class OtaMqttClient:
             ).fetchone()
             if row is None:
                 return
-            payload = {"url": row["url"], "version": row["version"], "force": bool(row["force"]), "reboot": bool(row["reboot"])}
+            # 优先使用创建时存储的完整 payload（含 sha256 等字段）；
+            # 旧记录无 command_payload 时退化为按列重建。
+            try:
+                payload = json.loads(row["command_payload"]) if row["command_payload"] else None
+            except json.JSONDecodeError:
+                payload = None
+            if not isinstance(payload, dict) or not payload.get("url"):
+                payload = {"url": row["url"], "version": row["version"], "force": bool(row["force"]), "reboot": bool(row["reboot"])}
             try:
                 topic, payload_text = self.publish_ota(rgv_id, payload)
                 now = db.utc_now()

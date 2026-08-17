@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from . import db
 from .config import OTA_URL_MAX_BYTES
 from .mqtt_client import mqtt_client
-from .storage import extract_esp_app_version, finalize_firmware_file, firmware_path, save_upload_temp, size_warning
+from .storage import compute_image_digest, extract_esp_app_version, finalize_firmware_file, firmware_path, save_upload_temp, size_warning
 
 router = APIRouter()
 
@@ -47,8 +47,13 @@ TERMINAL_DEPLOYMENT_STATUSES = {"success", "failed", "rebooting", "skipped"}
 ACTIVE_DEPLOYMENT_STATUSES = {"queued", "published", "received", "downloading", "verifying", "writing"}
 
 
-def deployment_payload(url: str, version: str, force: bool, reboot: bool) -> dict[str, Any]:
-    return {"url": url, "version": version, "force": force, "reboot": reboot}
+def deployment_payload(url: str, version: str, force: bool, reboot: bool, sha256: str = "") -> dict[str, Any]:
+    payload: dict[str, Any] = {"url": url, "version": version, "force": force, "reboot": reboot}
+    # 设备端 esp_partition_get_sha256 校验口径的镜像摘要；旧记录无摘要则不下发
+    # （设备端保持向后兼容、跳过校验）。
+    if sha256:
+        payload["sha256"] = sha256
+    return payload
 
 
 @router.get("/api/health")
@@ -128,13 +133,14 @@ async def upload_firmware(
         raise HTTPException(status_code=400, detail="无法从固件中识别版本号，请手动填写")
 
     now = db.utc_now()
+    image_digest = compute_image_digest(temp_path, sha256)
     with db.connect() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO firmware_versions(version, filename, stored_filename, file_size, sha256, description, release_notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO firmware_versions(version, filename, stored_filename, file_size, sha256, image_digest, description, release_notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (version, file.filename or "firmware.bin", "pending.bin", file_size, sha256, description, release_notes, now, now),
+            (version, file.filename or "firmware.bin", "pending.bin", file_size, sha256, image_digest, description, release_notes, now, now),
         )
         firmware_id = cursor.lastrowid
         stored_filename = finalize_firmware_file(temp_path, firmware_id, version, sha256)
@@ -266,7 +272,8 @@ async def create_deployments(request: Request) -> dict[str, Any]:
 
         for rgv_id in rgv_ids:
             now = db.utc_now()
-            payload = deployment_payload(url, fw_item["version"], force, reboot)
+            payload = deployment_payload(url, fw_item["version"], force, reboot,
+                                         fw_item.get("image_digest") or "")
             payload_text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             cursor = conn.execute(
                 """
@@ -370,7 +377,7 @@ def check_ota(request: Request, rgv_id: str, version: str = "") -> dict[str, Any
 
         deployment = conn.execute(
             """
-            SELECT d.*, f.stored_filename, f.is_active
+            SELECT d.*, f.stored_filename, f.is_active, f.image_digest
             FROM deployments d JOIN firmware_versions f ON f.id=d.firmware_id
             WHERE d.rgv_id=? AND lower(d.status) IN ({})
             ORDER BY d.id DESC LIMIT 1
@@ -392,7 +399,7 @@ def check_ota(request: Request, rgv_id: str, version: str = "") -> dict[str, Any
         settings = db.get_settings(conn)
         url = firmware_download_url(request, item["stored_filename"], settings)
         validate_ota_url(url)
-        return {
+        response = {
             "update": True,
             "deployment_id": item["id"],
             "version": item["version"],
@@ -400,6 +407,9 @@ def check_ota(request: Request, rgv_id: str, version: str = "") -> dict[str, Any
             "force": bool(item["force"]),
             "reboot": bool(item["reboot"]),
         }
+        if item.get("image_digest"):
+            response["sha256"] = item["image_digest"]
+        return response
 
 
 @router.get("/api/deployments")

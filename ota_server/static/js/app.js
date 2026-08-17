@@ -12,6 +12,14 @@ const STATUS_MAP = {
   'unknown': '未知'
 };
 
+// HTML 转义：所有插入 innerHTML 的服务器/设备数据必须经过此函数，
+// 防止存储型 XSS（设备可通过 MQTT 上报注入任意 message/rgv_id）。
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
 async function api(path, options={}) {
   const r = await fetch(path, {
     headers: {
@@ -53,9 +61,9 @@ function toast(msg, type = 'info') {
 }
 
 function badge(status) {
-  const s = (status || 'unknown').toLowerCase();
+  const s = (status || 'unknown').toLowerCase().replace(/[^a-z]/g, '') || 'unknown';
   const text = STATUS_MAP[s] || status || '未知';
-  return `<span class="badge ${s}"><span class="badge-dot"></span>${text}</span>`;
+  return `<span class="badge ${s}"><span class="badge-dot"></span>${esc(text)}</span>`;
 }
 
 function progress(v) {
@@ -94,7 +102,7 @@ async function refreshHealth() {
     if (p) {
       const text = h.mqtt_connected ? `MQTT 已连接 (${h.mqtt_broker})` : `MQTT 未连接 ${h.mqtt_error || ''}`;
       p.className = `pill ${h.mqtt_connected ? 'ok' : 'bad'}`;
-      p.innerHTML = `<span class="status-dot animate-pulse"></span><span class="status-text">${text}</span>`;
+      p.innerHTML = `<span class="status-dot animate-pulse"></span><span class="status-text">${esc(text)}</span>`;
     }
   } catch (e) {}
 }

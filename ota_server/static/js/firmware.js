@@ -4,32 +4,32 @@ async function loadFirmware() {
   if (!table) return;
   
   table.innerHTML = rows.map(f => {
-    const archiveBtn = f.is_active 
+    const archiveBtn = f.is_active
       ? `<button class="btn-small btn-danger-outline" onclick="archiveFw(${f.id})">归档</button>`
       : `<span class="muted-text">已归档</span>`;
-      
-    const descText = f.description ? `<div class="fw-desc">${f.description}</div>` : '';
-    const notesText = f.release_notes ? `<div class="fw-notes">${f.release_notes}</div>` : '';
-    const warningBadge = f.warning ? `<span class="badge failed" title="${f.warning}">超出大小限制</span>` : '';
-    
+
+    const descText = f.description ? `<div class="fw-desc">${esc(f.description)}</div>` : '';
+    const notesText = f.release_notes ? `<div class="fw-notes">${esc(f.release_notes)}</div>` : '';
+    const warningBadge = f.warning ? `<span class="badge failed" title="${esc(f.warning)}">超出大小限制</span>` : '';
+
     return `
       <tr>
         <td class="code-font">${f.id}</td>
         <td>
-          <span class="version-tag">${f.version}</span>
+          <span class="version-tag">${esc(f.version)}</span>
           ${f.is_active ? '' : '<span class="badge failed">已归档</span>'}
         </td>
         <td>
-          <div class="fw-filename code-font">${f.filename} ${warningBadge}</div>
+          <div class="fw-filename code-font">${esc(f.filename)} ${warningBadge}</div>
           ${descText}
           ${notesText}
         </td>
         <td><span class="size-tag">${bytes(f.file_size)}</span></td>
-        <td class="code-font hash-cell" title="${f.sha256}">${shortHash(f.sha256)}</td>
+        <td class="code-font hash-cell" title="${esc(f.sha256)}">${esc(shortHash(f.sha256))}</td>
         <td>
           <div class="copy-url-group">
-            <input class="copy-input code-font" readonly value="${f.download_url}">
-            <button class="btn-small btn-secondary copy-btn" onclick="copyUrl('${f.download_url}', this)">
+            <input class="copy-input code-font" readonly value="${esc(f.download_url)}">
+            <button class="btn-small btn-secondary copy-btn" data-url="${esc(f.download_url)}" onclick="copyUrl(this.dataset.url, this)">
               <span>复制</span>
             </button>
           </div>
